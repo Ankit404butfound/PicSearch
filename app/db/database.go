@@ -16,7 +16,6 @@ func ConnectDatabase(dsn string) error {
 	if err != nil {
 		return err
 	}
-
 	DB = db
 	return nil
 }
