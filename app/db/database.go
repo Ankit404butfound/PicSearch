@@ -3,30 +3,23 @@ package db
 import (
 	"log"
 
+	"PicSearch/app/db/models"
+
 	"gorm.io/driver/postgres" // or mysql, sqlite, etc.
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
-
-func ConnectDatabase(dsn string) error {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: false,
-	})
-	if err != nil {
-		return err
-	}
-	DB = db
-	return nil
-}
+var DB, err = gorm.Open(postgres.Open("postgresql://rpie:rpie@100.115.44.83:5432/picsearch"), &gorm.Config{
+	DisableForeignKeyConstraintWhenMigrating: false,
+})
 
 func Migrate() error {
 	err := DB.AutoMigrate(
-		&User{},
-		&File{},
-		&UniqueFace{},
-		&Face{},
-		&Job{},
+		&models.User{},
+		&models.File{},
+		&models.UniqueFace{},
+		&models.Face{},
+		&models.Job{},
 	)
 
 	if err != nil {

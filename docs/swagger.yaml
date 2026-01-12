@@ -1,0 +1,153 @@
+definitions:
+  models.Face:
+    properties:
+      coordinates:
+        items:
+          type: number
+        type: array
+      file:
+        $ref: '#/definitions/models.File'
+      fileId:
+        type: integer
+      id:
+        type: integer
+      uniqueFace:
+        allOf:
+        - $ref: '#/definitions/models.UniqueFace'
+        description: Associations
+      uniqueFaceID:
+        type: integer
+    type: object
+  models.File:
+    properties:
+      description:
+        type: string
+      embedding:
+        items:
+          type: number
+        type: array
+      faces:
+        items:
+          $ref: '#/definitions/models.Face'
+        type: array
+      id:
+        type: integer
+      jobs:
+        items:
+          $ref: '#/definitions/models.Job'
+        type: array
+      name:
+        type: string
+      size:
+        format: float32
+        type: number
+      uploadedAt:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Associations
+      userID:
+        type: integer
+    type: object
+  models.Job:
+    properties:
+      endedAt:
+        type: string
+      file:
+        $ref: '#/definitions/models.File'
+      fileId:
+        type: integer
+      id:
+        type: integer
+      startedAt:
+        type: string
+      status:
+        type: string
+    type: object
+  models.UniqueFace:
+    properties:
+      embedding:
+        items:
+          type: number
+        type: array
+      faces:
+        description: Associations
+        items:
+          $ref: '#/definitions/models.Face'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.User:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      files:
+        description: Associations
+        items:
+          $ref: '#/definitions/models.File'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      description: Returns the status of the API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health Check
+      tags:
+      - Health
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a user by their unique ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: 'error": "User not found'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'error": "Internal server error'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a user by ID
+      tags:
+      - users
+swagger: "2.0"

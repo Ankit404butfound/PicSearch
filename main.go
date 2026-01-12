@@ -1,25 +1,29 @@
 package main
 
 import (
-	"PicSearch/app/db"
-	"log"
+	"PicSearch/app/api/router"
+
+	"PicSearch/docs"
+
+	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger" // This is the gin-swagger package
 )
 
 func main() {
+	// Setup Swagger
+	docs.SwaggerInfo.Title = "PicSearch API"
+	docs.SwaggerInfo.Description = "API documentation for PicSearch"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.BasePath = "/api"
+	docs.SwaggerInfo.Schemes = []string{"http"}
+
 	// Database connection string
-	dsn := "postgresql://rpie:rpie@100.115.44.83:5432/picsearch"
+	r := gin.Default()
 
-	// Connect to database
-	err := db.ConnectDatabase(dsn)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-
-	// Run migrations
-	err = db.Migrate()
-	if err != nil {
-		log.Fatal("Migration failed:", err)
-	}
-
-	log.Println("Database migration completed!")
+	// Setup routes
+	router.SetupRoutes(r)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	r.Run() // Start the server
 }
