@@ -29,21 +29,23 @@ type File struct {
 }
 
 type Face struct {
-	ID     int  `gorm:"primaryKey"`
-	FileId int  `gorm:"foreignKey"`
-	File   File `gorm:"constraint:OnDelete:CASCADE;"`
+	ID           int       `gorm:"primaryKey"`
+	FileId       int       `gorm:"foreignKey"`
+	UniqueFaceID int       `gorm:"foreignKey"`
+	Coordinates  []float32 `gorm:"type:float[]"`
 
 	// Associations
-	Embedding   []float32 `gorm:"type:vector(128)"`
-	Coordinates []float32 `gorm:"type:float[]"`
+	UniqueFace UniqueFace `gorm:"constraint:OnDelete:CASCADE;"`
+	File       File       `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type UniqueFace struct {
-	ID   int `gorm:"primary_key"`
-	Name string
+	ID        int `gorm:"primary_key"`
+	Name      string
+	Embedding []float32 `gorm:"type:vector(128)"`
 
 	// Associations
-	Embedding []float32 `gorm:"type:vector(128)"`
+	Faces []Face `gorm:"foreignKey:UniqueFaceID"`
 }
 
 type Job struct {
@@ -53,4 +55,14 @@ type Job struct {
 	Status    string
 	StartedAt time.Time
 	EndedAt   time.Time
+}
+
+type Devices struct {
+	ID        int `gorm:"primaryKey"`
+	UserID    int `gorm:"foreignKey"`
+	DeviceID  string
+	CreatedAt time.Time
+
+	// Associations
+	User User `gorm:"constraint:OnDelete:CASCADE;"`
 }
