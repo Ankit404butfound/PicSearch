@@ -1,21 +1,13 @@
 import os
 import psycopg2
 
-class DBClient:
+def get_conn():
+    # Get config from environment
+    conn = psycopg2.connect(
+        os.getenv("DSN")
+    )
     
-    @staticmethod
-    def get_conn():
-       
-        # Get config from environment
-        conn = psycopg2.connect(
-            dbname=os.getenv('DB_NAME'),
-            user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASSWORD'),
-            host=os.getenv('DB_HOST'),
-            port=os.getenv('DB_PORT')
-        )
-        
-        # Create cursor
-        cur = conn.cursor()
-        
-        return conn, cur
+    # Create cursor
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    
+    return conn, cur
