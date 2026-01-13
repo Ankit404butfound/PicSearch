@@ -1,5 +1,7 @@
 import os
+import io
 import db_client
+import requests
 import face_recognition
 
 
@@ -26,10 +28,12 @@ def encode(job_id: int):
     if not job:
         print(f"No pending job found with id {job_id}")
         return
-    file_url = job['file_url']
+    file_url = job.get('file_url')
 
     # Load image and compute face encoding
-    face_encodings, face_locations = encode_face(file_url)
+    response = requests.get(file_url)
+    image = io.BytesIO(response.content)
+    face_encodings, face_locations = encode_face(image)
     if not face_encodings:
         # Update job status to failed if no faces found
         cur.execute("UPDATE jobs SET face_encoding_status = 'failed' WHERE id = %s", (job_id,))
@@ -46,5 +50,26 @@ def encode(job_id: int):
                 ORDER BY distance ASC LIMIT 1",
             (list(encoding), float(os.getenv("FACE_ENCODING_THRESHOLD")))
         )
+        result = cur.fetchone()
+        if result:
+            unique_face_id = result['id']
+        else:
+            # Insert new unique face
+            cur.execute(
+                "INSERT INTO unique_faces (embedding) VALUES (%s) RETURNING id",
+                (list(encoding),)
+            )
+            unique_face_id = cur.fetchone()['id']
+
+        # Insert face instance
+        cur.execute(
+            "INSERT INTO faces (file_id, unique_face_id, coordinates) VALUES (%s, %s, %s)",
+            (job['id'], unique_face_id, list(location))
+        )
+
+    # Update job status to completed
+    cur.execute("UPDATE jobs SET face_encoding_status = 'completed' WHERE id = %s", (job_id,))
+    conn.commit()
+    print(f"Successfully processed job id {job_id}")
 
     
