@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"os"
 
 	"PicSearch/app/db/models"
 
@@ -9,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var DB, err = gorm.Open(postgres.Open("postgresql://rpie:rpie@100.115.44.83:5432/picsearch"), &gorm.Config{
+var DB, err = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{
 	DisableForeignKeyConstraintWhenMigrating: false,
 })
 
