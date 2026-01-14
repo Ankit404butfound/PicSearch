@@ -1,6 +1,6 @@
 import pika
-import clip_processor
-import face_encoder
+import jobs.workers.clip_processor as clip_processor
+import jobs.workers.face_encoder as face_encoder
 
 
 def main():
@@ -15,7 +15,12 @@ def main():
     channel.queue_declare(queue='face_encoder')
     channel.basic_consume(queue='face_encoder',
                     auto_ack=True,
-                    on_message_callback=face_encoder.encode)
+                    on_message_callback=face_encoder.process_image)
+    
+    channel.queue_declare(queue='generate_clip_encoding')
+    channel.basic_consume(queue='generate_clip_encoding',
+                    auto_ack=True,
+                    on_message_callback=clip_processor.generate_encoding_for_channel)
     channel.start_consuming()
 
 

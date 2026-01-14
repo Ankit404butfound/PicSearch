@@ -1,8 +1,10 @@
 import os
 import io
-import db_client
+import json
 import requests
 import face_recognition
+
+import db_client
 
 
 def encode_face(image):
@@ -15,7 +17,7 @@ def encode_face(image):
     return face_encodings, face_locations if face_encodings else ([], [])
 
 
-def encode(ch, method, properties, body):
+def process_image(ch, method, properties, body):
     job_id = int(body)
     conn, cur = db_client.get_conn()
     # Fetch job details
