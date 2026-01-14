@@ -1,22 +1,22 @@
-# creating queue to receive images
+import pika
+import clip_processor
+import face_encoder
 
-import pika, sys, os
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
 
     channel.queue_declare(queue='clip_processor')
-
-    def callback(ch, method, properties, job_id):
-        print(f" [x] Received {job_id}")
-
-        channel.basic_consume(queue='clip_processor',
-                        auto_ack=True,
-                        on_message_callback=callback)
-
-
-        channel.start_consuming()
+    channel.basic_consume(queue='clip_processor',
+                    auto_ack=True,
+                    on_message_callback=clip_processor.process_image)
+    
+    channel.queue_declare(queue='face_encoder')
+    channel.basic_consume(queue='face_encoder',
+                    auto_ack=True,
+                    on_message_callback=face_encoder.encode)
+    channel.start_consuming()
 
 
 if __name__ == '__main__':
@@ -24,7 +24,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print('Interrupted')
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)

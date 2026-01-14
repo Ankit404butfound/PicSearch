@@ -10,7 +10,8 @@ processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 
 
-def process_image(job_id: int):
+def process_image(ch, method, properties, body):
+    job_id = int(body)
     conn, cur = db_client.get_conn()
     # Fetch job details
     cur.execute(

@@ -15,7 +15,8 @@ def encode_face(image):
     return face_encodings, face_locations if face_encodings else ([], [])
 
 
-def encode(job_id: int):
+def encode(ch, method, properties, body):
+    job_id = int(body)
     conn, cur = db_client.get_conn()
     # Fetch job details
     cur.execute(
