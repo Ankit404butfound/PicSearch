@@ -19,6 +19,7 @@ type File struct {
 	Description string
 	UploadedAt  time.Time
 	Embedding   []float32 `gorm:"type:vector(128)"`
+	Url         string
 	Size        float32
 	UserID      int
 

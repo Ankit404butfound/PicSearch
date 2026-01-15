@@ -116,3 +116,31 @@ func DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
+
+// file routes
+
+func UploadFiles(c *gin.Context) {
+	id := c.Param("id")
+	userId, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	form, _ := c.MultipartForm()
+	files := form.File["files"]
+
+	for _, file := range files {
+
+		// Upload the file to specific dst.
+		c.SaveUploadedFile(file, "./files/"+file.Filename)
+	}
+
+	err = services.UploadFiles(userId)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save photos"})
+		return
+	}
+}
