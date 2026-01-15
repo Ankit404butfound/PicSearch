@@ -20,7 +20,17 @@ func GetAllUser(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUser handles GET requests to fetch user by ID
+// GetUser godoc
+// @Summary Get a user by ID
+// @Description Get a user by their unique ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} models.User
+// @Failure 404 {object} map[string]string "error": "User not found"
+// @Failure 500 {object} map[string]string "error": "Internal server error"
+// @Router /users/{id} [get]
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
 
