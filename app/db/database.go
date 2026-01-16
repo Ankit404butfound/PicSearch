@@ -6,11 +6,14 @@ import (
 
 	"PicSearch/app/db/models"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres" // or mysql, sqlite, etc.
 	"gorm.io/gorm"
 )
 
-var DB, err = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{
+var err = godotenv.Load(".env")
+
+var DB, _ = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{
 	DisableForeignKeyConstraintWhenMigrating: false,
 })
 
@@ -21,6 +24,7 @@ func Migrate() error {
 		&models.UniqueFace{},
 		&models.Face{},
 		&models.Job{},
+		&models.Devices{},
 	)
 
 	if err != nil {

@@ -3,25 +3,25 @@ package models
 import "time"
 
 type User struct {
-	ID        int `gorm:"primaryKey"`
-	Name      string
-	Email     string
-	Password  string
-	CreatedAt time.Time
+	ID        int       `gorm:"primaryKey"`
+	Name      string    `gorm:"type:varchar(255);not null"`
+	Email     string    `gorm:"type:varchar(255);unique;not null"`
+	Password  string    `gorm:"type:varchar(255);not null"`
+	CreatedAt time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
 
 	// Associations
 	Files []File `gorm:"foreignKey:UserID"`
 }
 
 type File struct {
-	ID          int `gorm:"primaryKey"`
-	Name        string
-	Description string
-	UploadedAt  time.Time
+	ID          int       `gorm:"primaryKey"`
+	Name        string    `gorm:"type:varchar(255);not null"`
+	Description string    `gorm:"type:text"`
+	UploadedAt  time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
 	Embedding   []float32 `gorm:"type:vector(128)"`
-	Url         string
-	Size        float32
-	UserID      int
+	Url         string    `gorm:"type:varchar(512);not null"`
+	Size        float32   `gorm:"type:float"`
+	UserID      int       `gorm:"foreignKey;not null"`
 
 	// Associations
 	User  User   `gorm:"constraint:OnDelete:CASCADE;"`
@@ -31,9 +31,9 @@ type File struct {
 
 type Face struct {
 	ID           int       `gorm:"primaryKey"`
-	FileId       int       `gorm:"foreignKey"`
-	UniqueFaceID int       `gorm:"foreignKey"`
-	Coordinates  []float32 `gorm:"type:float[]"`
+	FileId       int       `gorm:"foreignKey;not null"`
+	UniqueFaceID int       `gorm:"foreignKey;not null"`
+	Coordinates  []float32 `gorm:"type:float[];not null"`
 
 	// Associations
 	UniqueFace UniqueFace `gorm:"constraint:OnDelete:CASCADE;"`
@@ -43,26 +43,26 @@ type Face struct {
 type UniqueFace struct {
 	ID        int `gorm:"primary_key"`
 	Name      string
-	Embedding []float32 `gorm:"type:vector(128)"`
+	Embedding []float32 `gorm:"type:vector(128);not null"`
 
 	// Associations
 	Faces []Face `gorm:"foreignKey:UniqueFaceID"`
 }
 
 type Job struct {
-	ID        int  `gorm:"primary_key"`
-	FileId    int  `gorm:"foreignKey"`
-	File      File `gorm:"constraint:OnDelete:CASCADE;"`
-	Status    string
-	StartedAt time.Time
-	EndedAt   time.Time
+	ID        int       `gorm:"primary_key"`
+	FileId    int       `gorm:"foreignKey;not null"`
+	File      File      `gorm:"constraint:OnDelete:CASCADE;"`
+	Status    string    `gorm:"type:varchar(50);not null"`
+	StartedAt time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
+	EndedAt   time.Time `gorm:"type:timestamp"`
 }
 
 type Devices struct {
-	ID        int `gorm:"primaryKey"`
-	UserID    int `gorm:"foreignKey"`
-	DeviceID  string
-	CreatedAt time.Time
+	ID        int       `gorm:"primaryKey"`
+	UserID    int       `gorm:"foreignKey;not null"`
+	DeviceID  string    `gorm:"type:varchar(255);not null"`
+	CreatedAt time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
 
 	// Associations
 	User User `gorm:"constraint:OnDelete:CASCADE;"`

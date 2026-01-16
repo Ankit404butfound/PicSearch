@@ -1,69 +1,76 @@
-create table if not exists users
+create table if not exists public.users
 (
     id         bigserial
         primary key,
-    name       text,
-    email      text,
-    password   text,
-    created_at timestamp with time zone
+    name       varchar(255)                        not null,
+    email      varchar(255)                        not null
+        constraint uni_users_email
+            unique,
+    password   varchar(255)                        not null,
+    created_at timestamp default CURRENT_TIMESTAMP not null
 );
-
-create table if not exists files
+create table if not exists public.files
 (
     id          bigserial
         primary key,
-    name        text,
+    name        varchar(255)                        not null,
     description text,
-    uploaded_at timestamp with time zone,
+    uploaded_at timestamp default CURRENT_TIMESTAMP not null,
     embedding   vector(128),
+    url         varchar(512)                        not null,
     size        numeric,
-    user_id     bigint
+    user_id     bigint                              not null
         constraint fk_users_files
-            references users
+            references public.users
 );
 
-create table if not exists unique_faces
+
+create table if not exists public.unique_faces
 (
     id        bigserial
         primary key,
     name      text,
-    embedding vector(128)
+    embedding vector(128) not null
 );
 
-create table if not exists faces
+
+create table if not exists public.faces
 (
     id             bigserial
         primary key,
-    file_id        bigint
+    file_id        bigint             not null
         constraint fk_files_faces
-            references files,
-    unique_face_id bigint
+            references public.files,
+    unique_face_id bigint             not null
         constraint fk_unique_faces_faces
-            references unique_faces,
-    coordinates    double precision[]
+            references public.unique_faces,
+    coordinates    double precision[] not null
 );
 
-create table if not exists jobs
+
+create table if not exists public.jobs
 (
     id         bigserial
         primary key,
-    file_id    bigint
+    file_id    bigint                              not null
         constraint fk_files_jobs
-            references files,
-    status     text,
-    started_at timestamp with time zone,
-    ended_at   timestamp with time zone
+            references public.files,
+    status     varchar(50)                         not null,
+    started_at timestamp default CURRENT_TIMESTAMP not null,
+    ended_at   timestamp
 );
 
 
-create index if not exists idx_files_user_id
-    on files (user_id);
+create table if not exists public.devices
+(
+    id         bigserial
+        primary key,
+    user_id    bigint                              not null
+        constraint fk_devices_user
+            references public.users
+            on delete cascade,
+    device_id  varchar(255)                        not null,
+    created_at timestamp default CURRENT_TIMESTAMP not null
+);
 
-create index if not exists idx_faces_file_id
-    on faces (file_id);
 
-create index if not exists idx_faces_unique_face_id
-    on faces (unique_face_id);
-
-create index if not exists idx_jobs_file_id
-    on jobs (file_id);

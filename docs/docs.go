@@ -38,6 +38,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/login": {
+            "post": {
+                "description": "Authenticates a user and returns a JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "authRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "token\": \"JWT token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error\": \"Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error\": \"Authentication failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/": {
+            "post": {
+                "description": "Create a new user with the provided information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a new user",
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateUserRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error\": \"Invalid data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error\": \"Could not create user",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "description": "Get a user by their unique ID",
@@ -58,13 +172,21 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9kdt0uGAcQEisEkFPQkZJzJ4",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/schemas.UserResponse"
                         }
                     },
                     "404": {
@@ -90,157 +212,60 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Face": {
+        "controllers.AuthRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
-                "coordinates": {
-                    "type": "array",
-                    "items": {
-                        "type": "number"
-                    }
-                },
-                "file": {
-                    "$ref": "#/definitions/models.File"
-                },
-                "fileId": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "uniqueFace": {
-                    "description": "Associations",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.UniqueFace"
-                        }
-                    ]
-                },
-                "uniqueFaceID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.File": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "embedding": {
-                    "type": "array",
-                    "items": {
-                        "type": "number"
-                    }
-                },
-                "faces": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Face"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "jobs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Job"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "number",
-                    "format": "float32"
-                },
-                "uploadedAt": {
-                    "type": "string"
-                },
-                "user": {
-                    "description": "Associations",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    ]
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Job": {
-            "type": "object",
-            "properties": {
-                "endedAt": {
-                    "type": "string"
-                },
-                "file": {
-                    "$ref": "#/definitions/models.File"
-                },
-                "fileId": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.UniqueFace": {
-            "type": "object",
-            "properties": {
-                "embedding": {
-                    "type": "array",
-                    "items": {
-                        "type": "number"
-                    }
-                },
-                "faces": {
-                    "description": "Associations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Face"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.User": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string"
                 },
-                "files": {
-                    "description": "Associations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.File"
-                    }
-                },
-                "id": {
-                    "type": "integer"
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "description": "The email of the user",
+                    "type": "string"
                 },
                 "name": {
+                    "description": "The name of the user",
                     "type": "string"
                 },
                 "password": {
+                    "description": "The password of the user",
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "The creation timestamp of the user",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "The email of the user",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "The ID of the user",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "The name of the user",
                     "type": "string"
                 }
             }

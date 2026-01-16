@@ -1,13 +1,16 @@
 package controllers
 
 import (
+	"PicSearch/app/api/schemas"
 	"PicSearch/app/api/services"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"PicSearch/app/db/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 // GetAllUser
@@ -27,10 +30,11 @@ func GetAllUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} models.User
+// @Success 200 {object} schemas.UserResponse
 // @Failure 404 {object} map[string]string "error": "User not found"
 // @Failure 500 {object} map[string]string "error": "Internal server error"
 // @Router /users/{id} [get]
+// @Param Authorization header string true "Bearer token" default(Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9kdt0uGAcQEisEkFPQkZJzJ4)
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -43,15 +47,34 @@ func GetUser(c *gin.Context) {
 
 	// Get user details from service
 	user, err := services.GetUserByID(userId)
+	fmt.Println("user service response:", user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	var userResponse schemas.UserResponse
+	err = copier.Copy(&userResponse, &user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, userResponse)
 }
 
-// CreateUser handles POST requests to create a new user
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Create a new user with the provided information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body schemas.CreateUserRequest true "User data"
+// @Success 201 {object} schemas.UserResponse
+// @Failure 400 {object} map[string]string "error": "Invalid data"
+// @Failure 500 {object} map[string]string "error": "Could not create user"
+// @Router /users/ [post]
+// @Param Authorization header string true "Bearer token" default(Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9k
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -66,7 +89,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdUser)
+	var userResponse schemas.UserResponse
+	err = copier.Copy(&userResponse, &createdUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, userResponse)
 }
 
 // Update user
@@ -120,13 +150,13 @@ func DeleteUser(c *gin.Context) {
 // file routes
 
 func UploadFiles(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
+	// id := c.Param("id")
+	// userId, err := strconv.Atoi(id)
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
-		return
-	}
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+	// 	return
+	// }
 
 	form, _ := c.MultipartForm()
 	files := form.File["files"]
@@ -137,10 +167,10 @@ func UploadFiles(c *gin.Context) {
 		c.SaveUploadedFile(file, "./files/"+file.Filename)
 	}
 
-	err = services.UploadFiles(userId)
+	// err = services.UploadFiles(userId)
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save photos"})
-		return
-	}
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save photos"})
+	// 	return
+	// }
 }

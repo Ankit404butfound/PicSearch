@@ -1,102 +1,43 @@
 definitions:
-  models.Face:
+  controllers.AuthRequest:
     properties:
-      coordinates:
-        items:
-          type: number
-        type: array
-      file:
-        $ref: '#/definitions/models.File'
-      fileId:
-        type: integer
-      id:
-        type: integer
-      uniqueFace:
-        allOf:
-        - $ref: '#/definitions/models.UniqueFace'
-        description: Associations
-      uniqueFaceID:
-        type: integer
-    type: object
-  models.File:
-    properties:
-      description:
-        type: string
-      embedding:
-        items:
-          type: number
-        type: array
-      faces:
-        items:
-          $ref: '#/definitions/models.Face'
-        type: array
-      id:
-        type: integer
-      jobs:
-        items:
-          $ref: '#/definitions/models.Job'
-        type: array
-      name:
-        type: string
-      size:
-        format: float32
-        type: number
-      uploadedAt:
-        type: string
-      user:
-        allOf:
-        - $ref: '#/definitions/models.User'
-        description: Associations
-      userID:
-        type: integer
-    type: object
-  models.Job:
-    properties:
-      endedAt:
-        type: string
-      file:
-        $ref: '#/definitions/models.File'
-      fileId:
-        type: integer
-      id:
-        type: integer
-      startedAt:
-        type: string
-      status:
-        type: string
-    type: object
-  models.UniqueFace:
-    properties:
-      embedding:
-        items:
-          type: number
-        type: array
-      faces:
-        description: Associations
-        items:
-          $ref: '#/definitions/models.Face'
-        type: array
-      id:
-        type: integer
-      name:
-        type: string
-    type: object
-  models.User:
-    properties:
-      createdAt:
-        type: string
       email:
         type: string
-      files:
-        description: Associations
-        items:
-          $ref: '#/definitions/models.File'
-        type: array
-      id:
-        type: integer
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  schemas.CreateUserRequest:
+    properties:
+      email:
+        description: The email of the user
+        type: string
       name:
+        description: The name of the user
         type: string
       password:
+        description: The password of the user
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  schemas.UserResponse:
+    properties:
+      created_at:
+        description: The creation timestamp of the user
+        type: string
+      email:
+        description: The email of the user
+        type: string
+      id:
+        description: The ID of the user
+        type: integer
+      name:
+        description: The name of the user
         type: string
     type: object
 info:
@@ -117,6 +58,81 @@ paths:
       summary: Health Check
       tags:
       - Health
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns a JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: authRequest
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'token": "JWT token'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error": "Invalid request'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error": "Authentication failed'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login
+      tags:
+      - auth
+  /users/:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided information
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateUserRequest'
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.UserResponse'
+        "400":
+          description: 'error": "Invalid data'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'error": "Could not create user'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new user
+      tags:
+      - users
   /users/{id}:
     get:
       consumes:
@@ -128,13 +144,19 @@ paths:
         name: id
         required: true
         type: integer
+      - default: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9kdt0uGAcQEisEkFPQkZJzJ4
+        description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/schemas.UserResponse'
         "404":
           description: 'error": "User not found'
           schema:

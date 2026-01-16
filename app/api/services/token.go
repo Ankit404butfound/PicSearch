@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -27,7 +28,9 @@ func GenerateToken(user_id int) (string, error) {
 }
 
 func ValidateToken(tokenString string) (*jwt.Token, error) {
-	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	fmt.Println("Validating token:", tokenString)
+	token := tokenString[len("Bearer "):]
+	return jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, nil
 		}
@@ -42,7 +45,8 @@ func ExtractUSerID(tokenString string) (int, error) {
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		uid, err := strconv.Atoi(claims["user_id"].(string))
+		fmt.Println("Claims[UserID]:", claims["user_id"])
+		uid, err := strconv.Atoi(fmt.Sprintf("%v", claims["user_id"]))
 		if err != nil {
 			return 0, err
 		}
