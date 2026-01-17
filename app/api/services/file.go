@@ -8,6 +8,8 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,9 +18,10 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 
 	for _, file := range files {
 
-		base := filepath.Base(file.Filename)
+		base := strings.Split(filepath.Base(file.Filename), ".")[0]
 		ext := filepath.Ext(file.Filename)
-		fileSaveName := base + "time." + ext
+		//fileSaveName := base + time.Now().Format("20060102150405") + ext
+		fileSaveName := fmt.Sprintf("%s_%d%s", base, time.Now().UnixNano(), ext)
 		savePath := filepath.Join("uploads", fileSaveName)
 
 		dst, err := os.Create(savePath)

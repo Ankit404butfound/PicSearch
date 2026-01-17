@@ -22,7 +22,14 @@ func UploadFiles(c *gin.Context) {
 		return
 	}
 
-	services.UploadFiles(userId, form.File["files"])
+	ok, err := services.UploadFiles(1, form.File["files"])
+	fmt.Println("upload files result:", ok, err)
+	if err != nil || !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "Files uploaded successfully"})
 
 }
 
