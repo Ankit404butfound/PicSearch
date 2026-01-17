@@ -38,7 +38,7 @@ func ValidateToken(tokenString string) (*jwt.Token, error) {
 	})
 }
 
-func ExtractUSerID(tokenString string) (int, error) {
+func ExtractUserId(tokenString string) (int, error) {
 	token, err := ValidateToken(tokenString)
 	if err != nil {
 		return 0, err

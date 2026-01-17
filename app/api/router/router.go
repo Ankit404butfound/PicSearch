@@ -2,7 +2,6 @@ package router
 
 import (
 	"PicSearch/app/api/controllers"
-	"PicSearch/app/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,13 +9,6 @@ import (
 // SetupRoutes sets up all the routes for the application
 func SetupRoutes(r *gin.Engine) {
 	apiGroup := r.Group("/api")
-
-	// Open routes
-	apiGroup.GET("/", HealthCheck)
-	apiGroup.POST("/login", controllers.Login)
-
-	// Protected routes
-	apiGroup.Use(middleware.JwtAuthMiddleware())
 	// Group user-related routes
 	userGroup := apiGroup.Group("/users")
 	{
@@ -27,6 +19,13 @@ func SetupRoutes(r *gin.Engine) {
 		userGroup.DELETE("/:id", controllers.DeleteUser)
 	}
 
+	fileGroup := apiGroup.Group("/files")
+	{
+		fileGroup.POST("/", controllers.UploadFiles)
+		fileGroup.GET("/", controllers.GetFiles)
+
+	}
+	apiGroup.GET("/", HealthCheck)
 }
 
 // HealthCheck godoc

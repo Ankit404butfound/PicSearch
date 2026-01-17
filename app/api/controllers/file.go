@@ -1,0 +1,60 @@
+package controllers
+
+import (
+	"PicSearch/app/api/services"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+// file routes
+
+func UploadFiles(c *gin.Context) {
+
+	userIdAny, _ := c.Get("userId")
+	userId := userIdAny.(int)
+	form, err := c.MultipartForm()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save photos"})
+		return
+	}
+
+	services.UploadFiles(userId, form.File["files"])
+
+}
+
+func GetFiles(c *gin.Context) {
+
+	userIdAny, _ := c.Get("userId")
+	userId := userIdAny.(int)
+
+	query := c.Param("q")
+	faceIdsStr := c.QueryArray("file_ids")
+
+	if query == "" && len(faceIdsStr) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Either query or face is required"})
+		return
+	}
+	var faceIds []int
+	if len(faceIdsStr) > 0 {
+		faceIds = make([]int, 0, len(faceIdsStr))
+
+		for _, s := range faceIdsStr {
+			id, err := strconv.Atoi(s)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": fmt.Sprintf("invalid file_id: %q (must be integer)", s),
+				})
+				return
+			}
+			faceIds = append(faceIds, id)
+		}
+	}
+
+	services.GetFiles(userId, query, faceIds)
+	// get all photos
+
+}

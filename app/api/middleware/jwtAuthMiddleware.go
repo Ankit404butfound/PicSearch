@@ -21,13 +21,13 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 		// Set user ID in context
-		userID, err := services.ExtractUSerID(token)
+		userId, err := services.ExtractUserId(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
-		c.Set("userID", userID)
+		c.Set("userId", userId)
 		c.Next()
 	}
 }
