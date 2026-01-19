@@ -23,18 +23,6 @@ func GetAllUser(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUser godoc
-// @Summary Get a user by ID
-// @Description Get a user by their unique ID
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path int true "User ID"
-// @Success 200 {object} schemas.UserResponse
-// @Failure 404 {object} map[string]string "error": "User not found"
-// @Failure 500 {object} map[string]string "error": "Internal server error"
-// @Router /users/{id} [get]
-// @Param Authorization header string true "Bearer token" default(Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9kdt0uGAcQEisEkFPQkZJzJ4)
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -63,18 +51,6 @@ func GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, userResponse)
 }
 
-// CreateUser godoc
-// @Summary Create a new user
-// @Description Create a new user with the provided information
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body schemas.CreateUserRequest true "User data"
-// @Success 201 {object} schemas.UserResponse
-// @Failure 400 {object} map[string]string "error": "Invalid data"
-// @Failure 500 {object} map[string]string "error": "Could not create user"
-// @Router /users/ [post]
-// @Param Authorization header string true "Bearer token" default(Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE4MDAwNzY0MTUsInVzZXJfaWQiOjF9.CLLSMQGyjT59PRZh1Vx9k
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
