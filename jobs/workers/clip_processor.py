@@ -3,45 +3,48 @@ import json
 import torch
 import requests
 from PIL import Image
-from transformers import AutoProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel
 import db_client
 
 
 
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+redis_client = db_client.get_redis_client()
 
 
 def encode_image(image):
     inputs = processor(images=image, return_tensors="pt")
+    outputs = model.get_image_features(**inputs)
+    return outputs[0].detach().cpu().numpy().tolist()
 
-    with torch.inference_mode():
-        outputs = model.get_image_features(**inputs)
-
+def encode_text(text):
+    inputs = processor(text=[text], return_tensors="pt", padding=True)
+    outputs = model.get_text_features(**inputs)
     return outputs[0].detach().cpu().numpy().tolist()
 
 
 def generate_encoding_for_channel(ch, method, properties, body):
-    payload = json.loads(body)
-    job_id = int(payload['job_id'])
-    image_bytes = payload['image_bytes']
-    redis_client = db_client.get_redis_client()
+    # try:
+        print("Received message for generating CLIP encoding", body)
 
-    embeddings = encode_image(Image.open(io.BytesIO(image_bytes)))
-    if not embeddings:
-        print(f"Failed to generate embeddings for job id {job_id}")
+        embeddings = encode_text(text=body.decode('utf-8'))
+        if not embeddings:
+            print(f"Failed to generate embeddings for text: {body.decode('utf-8')}")
+            redis_client.publish('encoding_results', json.dumps({
+                'embeddings': None
+            }))
+            return
+        
+        print(embeddings)
         redis_client.publish('encoding_results', json.dumps({
-            'job_id': job_id,
-            'status': 'failed',
-            'embeddings': None
+            'embeddings': embeddings
         }))
-        return
-    
-    redis_client.publish('encoding_results', json.dumps({
-        'job_id': job_id,
-        'status': 'completed',
-        'embeddings': embeddings
-    }))
+    # except Exception as e:
+    #     print(f"Error generating CLIP encoding: {e}")
+    #     redis_client.publish('encoding_results', json.dumps({
+    #         'embeddings': None
+    #     }))
 
 
 def process_image(ch, method, properties, body):

@@ -19,7 +19,7 @@ var DB, _ = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{
 })
 
 var RedisDB = redis.NewClient(&redis.Options{
-	Addr: os.Getenv("REDIS_URL"),
+	Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
 })
 
 func Migrate() error {

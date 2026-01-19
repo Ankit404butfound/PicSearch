@@ -1,11 +1,29 @@
+import os
 import pika
-import jobs.workers.clip_processor as clip_processor
-import jobs.workers.face_encoder as face_encoder
+import dotenv
+dotenv.load_dotenv()
+import workers.clip_processor as clip_processor
+import workers.face_encoder as face_encoder
 
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    print(' [*] Connecting to RabbitMQ server...')
+    print(f' [*] RabbitMQ Host: {RABBITMQ_HOST}:{RABBITMQ_PORT}')
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host=RABBITMQ_HOST,
+        port=RABBITMQ_PORT,
+        credentials=pika.PlainCredentials(
+            username=RABBITMQ_USER,
+            password=RABBITMQ_PASSWORD
+        )
+    ))
     channel = connection.channel()
+
+    print(' [*] Waiting for messages. To exit press CTRL+C')
 
     channel.queue_declare(queue='clip_processor')
     channel.basic_consume(queue='clip_processor',

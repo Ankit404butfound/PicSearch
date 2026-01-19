@@ -61,17 +61,20 @@ func GetFiles(id int, query string, faceIds []int) ([]models.File, error) {
 		dbQuery = dbQuery.Where("faces.unique_face_id IN ?", faceIds)
 	}
 
-	queryEmbedding, _ := utils.GetEmbeddings(query)
+	queryEmbedding, err := utils.GetEmbeddings(query)
+	if err != nil {
+		return nil, err
+	}
 
 	// Add ORDER BY clause if query (embedding) is provided
 	if query != "" {
 		// Assuming you have pgvector extension and the embedding is a vector type
 		// Use raw SQL for the vector distance operator
-		dbQuery = dbQuery.Order(gorm.Expr("files.embedding <=> ?", *&queryEmbedding))
+		dbQuery = dbQuery.Order(gorm.Expr("files.embedding <=> ?", queryEmbedding))
 	}
 
 	// Add LIMIT and execute
-	err := dbQuery.Limit(10).Find(&files).Error
+	err = dbQuery.Limit(10).Find(&files).Error
 	if err != nil {
 		return nil, err
 	}

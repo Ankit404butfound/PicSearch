@@ -12,34 +12,43 @@ import (
 
 func GetEmbeddings(query string) ([]float32, error) {
 	var amqpServerURL = os.Getenv("RABBITMQ_URL")
-	connectRabbitMQ, err := amqp.Dial(amqpServerURL)
+	conn, err := amqp.Dial(amqpServerURL)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
-	defer connectRabbitMQ.Close()
+	defer conn.Close()
 
-	channelRabbitMQ, err := connectRabbitMQ.Channel()
+	ch, err := conn.Channel()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to open a channel: %w", err)
 	}
-	defer channelRabbitMQ.Close()
+	defer ch.Close()
 
-	message := amqp.Publishing{
-		ContentType: "text/plain",
-		Body:        []byte(query),
-	}
-
-	if err := channelRabbitMQ.Publish(
-		"",                       // exchange
-		"generate_clip_encoding", // queue name
-		false,                    // mandatory
-		false,                    // immediate
-		message,                  // message to publish
-	); err != nil {
-		return nil, err
+	q, err := ch.QueueDeclare(
+		"generate_clip_encoding", // name
+		false,                    // durable
+		false,                    // delete when unused
+		false,                    // exclusive
+		false,                    // no-wait
+		nil,                      // arguments
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
-	fmt.Print(query)
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(query),
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to publish a message: %w", err)
+	}
+
 	ctx := context.Background()
 	sub := db.RedisDB.Subscribe(ctx, "encoding_results")
 	defer sub.Close()
@@ -52,12 +61,11 @@ func GetEmbeddings(query string) ([]float32, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var floats []float32
-	err = json.Unmarshal([]byte(msg.Payload), &floats)
+	var date map[string][]float32
+	err = json.Unmarshal([]byte(msg.Payload), &date)
 	if err != nil {
 		fmt.Println("Error deserializing message:", err)
 		return nil, err
 	}
-	return floats, nil
+	return date["embeddings"], nil
 }

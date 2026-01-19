@@ -1,4 +1,5 @@
 import os
+import re
 import redis
 import psycopg2
 
@@ -16,5 +17,8 @@ def get_conn():
 
 
 def get_redis_client():
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    print("Connecting to Redis server...", REDIS_HOST, REDIS_PORT)
+    redis_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
     return redis.from_url(redis_url)

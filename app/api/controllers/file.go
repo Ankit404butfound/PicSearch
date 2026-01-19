@@ -39,7 +39,7 @@ func GetFiles(c *gin.Context) {
 	// userIdAny, _ := c.Get("userId")
 	userId := 1 //userIdAny.(int)
 
-	query := c.Param("q")
+	query := c.Query("q")
 	faceIdsStr := c.QueryArray("face_ids")
 
 	// if query == "" && len(faceIdsStr) == 0 {
