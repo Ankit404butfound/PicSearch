@@ -13,8 +13,9 @@ import (
 
 func UploadFiles(c *gin.Context) {
 
-	userIdAny, _ := c.Get("userId")
-	userId := userIdAny.(int)
+	// userIdAny, _ := c.Get("userId")
+	// userId := userIdAny.(int)
+	// print(userId)
 	form, err := c.MultipartForm()
 
 	if err != nil {
@@ -35,16 +36,16 @@ func UploadFiles(c *gin.Context) {
 
 func GetFiles(c *gin.Context) {
 
-	userIdAny, _ := c.Get("userId")
-	userId := userIdAny.(int)
+	// userIdAny, _ := c.Get("userId")
+	userId := 1 //userIdAny.(int)
 
 	query := c.Param("q")
-	faceIdsStr := c.QueryArray("file_ids")
+	faceIdsStr := c.QueryArray("face_ids")
 
-	if query == "" && len(faceIdsStr) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Either query or face is required"})
-		return
-	}
+	// if query == "" && len(faceIdsStr) == 0 {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Either query or face is required"})
+	// 	return
+	// }
 	var faceIds []int
 	if len(faceIdsStr) > 0 {
 		faceIds = make([]int, 0, len(faceIdsStr))
@@ -61,7 +62,13 @@ func GetFiles(c *gin.Context) {
 		}
 	}
 
-	services.GetFiles(userId, query, faceIds)
+	files, err := services.GetFiles(userId, query, faceIds)
 	// get all photos
 
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, files)
 }
