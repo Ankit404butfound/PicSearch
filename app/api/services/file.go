@@ -28,6 +28,7 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("failed to create file: %w", err)
 		}
+
 		defer dst.Close()
 
 		var uploadFile models.File
@@ -41,6 +42,8 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 		if user_err != nil {
 			return false, nil
 		}
+
+		utils.TriggerImageProcessingJob(uploadFile.ID)
 
 	}
 

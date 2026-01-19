@@ -2,38 +2,41 @@ package utils
 
 import (
 	"PicSearch/app/db"
+	"PicSearch/app/db/models"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/streadway/amqp"
 )
 
-func GetEmbeddings(query string) ([]float32, error) {
+func TriggerQueue(channelName string, data string) error {
+
 	var amqpServerURL = os.Getenv("RABBITMQ_URL")
 	conn, err := amqp.Dial(amqpServerURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open a channel: %w", err)
+		return fmt.Errorf("failed to open a channel: %w", err)
 	}
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"generate_clip_encoding", // name
-		false,                    // durable
-		false,                    // delete when unused
-		false,                    // exclusive
-		false,                    // no-wait
-		nil,                      // arguments
+		channelName, // name
+		false,       // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to declare a queue: %w", err)
+		return fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
 	err = ch.Publish(
@@ -43,12 +46,29 @@ func GetEmbeddings(query string) ([]float32, error) {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(query),
+			Body:        []byte(data),
 		})
 	if err != nil {
-		return nil, fmt.Errorf("failed to publish a message: %w", err)
+		return fmt.Errorf("failed to publish a message: %w", err)
 	}
+	return nil
+}
 
+func TriggerImageProcessingJob(imageID int) {
+	var job models.Job
+	job.FileId = imageID
+	job.FaceEncodingStatus = "pending"
+	job.UniversalEncodignStatus = "pending"
+
+	db.DB.Create(&job)
+
+	TriggerQueue("face_encoder", strconv.Itoa(imageID))
+	TriggerQueue("clip_processor", strconv.Itoa(imageID))
+
+}
+
+func GetEmbeddings(query string) ([]float32, error) {
+	err := TriggerQueue("generate_clip_encoding", query)
 	ctx := context.Background()
 	sub := db.RedisDB.Subscribe(ctx, "encoding_results")
 	defer sub.Close()
