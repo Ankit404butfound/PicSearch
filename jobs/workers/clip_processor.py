@@ -48,14 +48,14 @@ def generate_encoding_for_channel(ch, method, properties, body):
 
 
 def process_image(ch, method, properties, body):
-
+    print("Received message for encoding image", body)
     job_id = int(body)
     conn, cur = db_client.get_conn()
     # Fetch job details
     cur.execute(
-        "SELECT id, file_url, FROM files \
+        "SELECT files.id as file_id, files.url FROM files \
             JOIN jobs ON files.id = jobs.file_id \
-            WHERE jobs.id = %s AND jobs.face_encoding_status = 'pending'",
+            WHERE jobs.id = %s AND jobs.universal_encoding_status = 'pending'",
         (job_id,)
     )
     job = cur.fetchone()
@@ -63,16 +63,18 @@ def process_image(ch, method, properties, body):
         print(f"No pending job found with id {job_id}")
         return
     
-    file_url = job['file_url']
+    file_url = job['url']
     image_response = requests.get(file_url)
     image_bytes = image_response.content
     image = Image.open(io.BytesIO(image_bytes))
     image_embeddings = encode_image(image)
 
+    print("Image embeddings generated:", image_embeddings)
+
     cur.execute("UPDATE jobs SET universal_encoding_status = 'completed' WHERE id = %s", (job_id,))
     conn.commit()
 
-    cur.execute("UPDATE files SET embedding = %s WHERE id = %s", (image_embeddings, job_id,))
+    cur.execute("UPDATE files SET embedding = %s WHERE id = %s", (image_embeddings, job['file_id'],))
     conn.commit()
     return
 

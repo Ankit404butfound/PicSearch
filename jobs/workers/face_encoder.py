@@ -18,11 +18,12 @@ def encode_face(image):
 
 
 def process_image(ch, method, properties, body):
+    print("Received message for processing image", body)
     job_id = int(body)
     conn, cur = db_client.get_conn()
     # Fetch job details
     cur.execute(
-        "SELECT id, file_url, FROM files \
+        "SELECT files.id, files.url FROM files \
             JOIN jobs ON files.id = jobs.file_id \
             WHERE jobs.id = %s AND jobs.face_encoding_status = 'pending'",
         (job_id,)
@@ -31,7 +32,7 @@ def process_image(ch, method, properties, body):
     if not job:
         print(f"No pending job found with id {job_id}")
         return
-    file_url = job.get('file_url')
+    file_url = job.get('url')
 
     # Load image and compute face encoding
     response = requests.get(file_url)
@@ -49,9 +50,9 @@ def process_image(ch, method, properties, body):
         # Find closest existing encoding from unique faces
         cur.execute(
             "SELECT id, embedding <=> %s AS distance FROM unique_faces \
-                WHERE distance < %s \
+                WHERE embedding <=> %s < %s \
                 ORDER BY distance ASC LIMIT 1",
-            (list(encoding), float(os.getenv("FACE_ENCODING_THRESHOLD")))
+            (str(encoding.tolist()), str(encoding.tolist()), float(os.getenv("FACE_ENCODING_THRESHOLD")))
         )
         result = cur.fetchone()
         if result:
@@ -60,7 +61,7 @@ def process_image(ch, method, properties, body):
             # Insert new unique face
             cur.execute(
                 "INSERT INTO unique_faces (embedding) VALUES (%s) RETURNING id",
-                (list(encoding),)
+                (str(encoding.tolist()),)
             )
             unique_face_id = cur.fetchone()['id']
 
