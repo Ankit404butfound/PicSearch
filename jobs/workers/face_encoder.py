@@ -45,12 +45,13 @@ def process_image(ch, method, properties, body):
         print(f"No faces found in image for job id {job_id}")
         return
     
+    print(f"Found {len(face_encodings)} face(s) in image for job id {job_id}")
     # Store face encodings and locations in the database
     for encoding, location in zip(face_encodings, face_locations):
         # Find closest existing encoding from unique faces
         cur.execute(
-            "SELECT id, embedding <=> %s AS distance FROM unique_faces \
-                WHERE embedding <=> %s < %s \
+            "SELECT id, embedding <-> %s AS distance FROM unique_faces \
+                WHERE embedding <-> %s < %s \
                 ORDER BY distance ASC LIMIT 1",
             (str(encoding.tolist()), str(encoding.tolist()), float(os.getenv("FACE_ENCODING_THRESHOLD")))
         )
