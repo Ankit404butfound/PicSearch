@@ -5,6 +5,7 @@ import (
 	"PicSearch/app/db"
 	"PicSearch/app/db/models"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -24,15 +25,25 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 		fileSaveName := fmt.Sprintf("%s_%d%s", base, time.Now().UnixNano(), ext)
 		savePath := filepath.Join("uploads", fileSaveName)
 
-		dst, err := os.Create(savePath)
+		src, err := file.Open()
 		if err != nil {
-			return false, fmt.Errorf("failed to create file: %w", err)
+			return false, err
+		}
+		defer src.Close()
+
+		out, err := os.Create(savePath)
+		if err != nil {
+			return false, err
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, src)
+		if err != nil {
+			return false, err
 		}
 
-		defer dst.Close()
-
 		var uploadFile models.File
-		uploadFile.Url = savePath
+		uploadFile.Url = fmt.Sprintf("%s/api/files/download/%s", os.Getenv("SERVER_HOST"), fileSaveName)
 		uploadFile.Name = fileSaveName
 		uploadFile.Size = float32(file.Size)
 		uploadFile.UserId = userId

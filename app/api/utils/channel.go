@@ -62,8 +62,8 @@ func TriggerImageProcessingJob(imageID int) {
 
 	db.DB.Create(&job)
 
-	TriggerQueue("face_encoder", strconv.Itoa(imageID))
-	TriggerQueue("clip_processor", strconv.Itoa(imageID))
+	TriggerQueue("face_encoder", strconv.Itoa(job.ID))
+	TriggerQueue("clip_processor", strconv.Itoa(job.ID))
 
 }
 

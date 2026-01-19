@@ -72,3 +72,9 @@ func GetFiles(c *gin.Context) {
 
 	c.JSON(http.StatusOK, files)
 }
+
+func DownloadFile(c *gin.Context) {
+	path := c.Param("path")
+	fmt.Println("Download path:", path)
+	c.File("uploads/" + path)
+}

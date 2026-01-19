@@ -29,6 +29,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		fileGroup.POST("/", controllers.UploadFiles)
 		fileGroup.GET("/", controllers.GetFiles)
+		fileGroup.GET("/download/:path", controllers.DownloadFile)
 
 	}
 	apiGroup.GET("/", HealthCheck)
