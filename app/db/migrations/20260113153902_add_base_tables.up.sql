@@ -1,4 +1,6 @@
-create table if not exists public.users
+CREATE TYPE job_status AS ENUM ('pending', 'in_progress', 'completed', 'failed');
+
+create table users
 (
     id         bigserial
         primary key,
@@ -9,65 +11,67 @@ create table if not exists public.users
     password   varchar(255)                        not null,
     created_at timestamp default CURRENT_TIMESTAMP not null
 );
-create table if not exists public.files
+
+
+create table files
 (
     id          bigserial
         primary key,
     name        varchar(255)                        not null,
     description text,
     uploaded_at timestamp default CURRENT_TIMESTAMP not null,
-    embedding   vector(128),
+    embedding   text,
     url         varchar(512)                        not null,
     size        numeric,
     user_id     bigint                              not null
         constraint fk_users_files
-            references public.users
+            references public.users,
+    metadata    jsonb
 );
 
-
-create table if not exists public.unique_faces
+create table unique_faces
 (
     id        bigserial
         primary key,
     name      text,
-    embedding vector(128) not null
+    embedding vector(128) not null,
+    image_url text
 );
 
-
-create table if not exists public.faces
+create table faces
 (
     id             bigserial
         primary key,
     file_id        bigint             not null
         constraint fk_files_faces
-            references public.files,
+            references files,
     unique_face_id bigint             not null
         constraint fk_unique_faces_faces
-            references public.unique_faces,
+            references unique_faces,
     coordinates    double precision[] not null
 );
 
 
-create table if not exists public.jobs
+create table if not exists jobs
 (
-    id         bigserial
+    id                        bigserial
         primary key,
-    file_id    bigint                              not null
+    file_id                   bigint                               not null
         constraint fk_files_jobs
-            references public.files,
-    status     varchar(50)                         not null,
-    started_at timestamp default CURRENT_TIMESTAMP not null,
-    ended_at   timestamp
+            references files,
+    started_at                timestamp  default CURRENT_TIMESTAMP not null,
+    ended_at                  timestamp,
+    face_encoding_status      job_status    default 'pending'::job_status,
+    universal_encoding_status job_status default 'pending'::job_status
 );
 
-
-create table if not exists public.devices
+create table if not exists devices
 (
     id         bigserial
         primary key,
     user_id    bigint                              not null
         constraint fk_devices_user
-            references public.users
+            references users
             on delete cascade,
     device_id  varchar(255)                        not null,
     created_at timestamp default CURRENT_TIMESTAMP not null

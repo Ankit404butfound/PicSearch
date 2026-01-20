@@ -1,1 +1,0 @@
-ALTER TABLE unique_faces DROP COLUMN image_url;

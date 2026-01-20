@@ -70,9 +70,10 @@ def process_image(ch, method, properties, body):
             face_image_io = io.BytesIO()
             face_image.save(face_image_io, format='JPEG')
             face_image_io.seek(0)
-            with open(f'../uploads/faces/face_{job_id}.jpg', 'wb') as f:
+            filename = f'face_{job_id}_{secrets.token_hex(16)}.jpg'
+            with open(f'../uploads/faces/{filename}', 'wb') as f:
                 f.write(face_image_io.read())
-            url = f'{os.getenv("SERVER_HOST")}/api/files/download/faces/face_{job_id}/{secrets.token_hex(16)}.jpg'
+            url = f'{os.getenv("SERVER_HOST")}/api/files/download/faces/{filename}'
             cur.execute(
                 "INSERT INTO unique_faces (embedding, image_url) VALUES (%s, %s) RETURNING id",
                 (str(encoding.tolist()), url)

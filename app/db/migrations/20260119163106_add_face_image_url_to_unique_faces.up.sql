@@ -1,1 +1,0 @@
-ALTER TABLE unique_faces ADD COLUMN image_url TEXT;
