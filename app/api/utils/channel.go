@@ -58,7 +58,7 @@ func TriggerImageProcessingJob(imageID int) {
 	var job models.Job
 	job.FileId = imageID
 	job.FaceEncodingStatus = "pending"
-	job.UniversalEncodignStatus = "pending"
+	job.UniversalEncodingStatus = "pending"
 
 	db.DB.Create(&job)
 

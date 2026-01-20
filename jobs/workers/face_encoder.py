@@ -1,6 +1,8 @@
 import os
 import io
-import json
+import secrets
+import PIL.Image as Image
+from networkx import second_order_centrality
 import requests
 import face_recognition
 
@@ -60,9 +62,20 @@ def process_image(ch, method, properties, body):
             unique_face_id = result['id']
         else:
             # Insert new unique face
+            # First crop the face image for storage
+            top, right, bottom, left = location
+            image = io.BytesIO(response.content)
+            image = Image.open(image)
+            face_image = image.crop((left, top, right, bottom))
+            face_image_io = io.BytesIO()
+            face_image.save(face_image_io, format='JPEG')
+            face_image_io.seek(0)
+            with open(f'../uploads/faces/face_{job_id}.jpg', 'wb') as f:
+                f.write(face_image_io.read())
+            url = f'{os.getenv("SERVER_HOST")}/api/files/download/faces/face_{job_id}/{secrets.token_hex(16)}.jpg'
             cur.execute(
-                "INSERT INTO unique_faces (embedding) VALUES (%s) RETURNING id",
-                (str(encoding.tolist()),)
+                "INSERT INTO unique_faces (embedding, image_url) VALUES (%s, %s) RETURNING id",
+                (str(encoding.tolist()), url)
             )
             unique_face_id = cur.fetchone()['id']
 

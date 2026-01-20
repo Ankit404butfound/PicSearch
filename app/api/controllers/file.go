@@ -4,7 +4,9 @@ import (
 	"PicSearch/app/api/services"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,6 +28,7 @@ func UploadFiles(c *gin.Context) {
 	ok, err := services.UploadFiles(1, form.File["files"])
 	fmt.Println("upload files result:", ok, err)
 	if err != nil || !ok {
+		fmt.Println("error in uploading files:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -75,6 +78,11 @@ func GetFiles(c *gin.Context) {
 
 func DownloadFile(c *gin.Context) {
 	path := c.Param("path")
-	fmt.Println("Download path:", path)
-	c.File("uploads/" + path)
+	asset := c.Param("asset")
+	if strings.TrimPrefix(asset, "/") == "" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	fullName := filepath.Join(path, strings.TrimPrefix(asset, "/"))
+	c.File(fullName)
 }

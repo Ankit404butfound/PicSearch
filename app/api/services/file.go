@@ -27,18 +27,21 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 
 		src, err := file.Open()
 		if err != nil {
+			fmt.Println("error opening file:", err)
 			return false, err
 		}
 		defer src.Close()
 
 		out, err := os.Create(savePath)
 		if err != nil {
+			fmt.Println("error creating file:", err)
 			return false, err
 		}
 		defer out.Close()
 
 		_, err = io.Copy(out, src)
 		if err != nil {
+			fmt.Println("error saving file:", err)
 			return false, err
 		}
 
@@ -51,6 +54,7 @@ func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
 		user_err := db.DB.Create(&uploadFile).Error
 
 		if user_err != nil {
+			fmt.Println("error saving file record to db:", user_err)
 			return false, nil
 		}
 

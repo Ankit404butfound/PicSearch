@@ -58,11 +58,10 @@ type Job struct {
 	ID                      int       `gorm:"primary_key"`
 	FileId                  int       `gorm:"foreignKey;not null"`
 	File                    File      `gorm:"constraint:OnDelete:CASCADE;"`
-	Status                  string    `gorm:"type:varchar(50);not null"`
 	StartedAt               time.Time `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
 	EndedAt                 time.Time `gorm:"type:timestamp"`
 	FaceEncodingStatus      string    `gorm:"type:varchar(50)"`
-	UniversalEncodignStatus string    `gorm:"type:varchar(50)"`
+	UniversalEncodingStatus string    `gorm:"type:varchar(50)"`
 }
 
 type Devices struct {
