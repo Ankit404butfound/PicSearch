@@ -18,14 +18,15 @@ func UploadFiles(c *gin.Context) {
 	// userIdAny, _ := c.Get("userId")
 	// userId := userIdAny.(int)
 	// print(userId)
-	form, err := c.MultipartForm()
+	form, err := c.FormFile("file")
 
 	if err != nil {
+		fmt.Println("error retrieving multipart form:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save photos"})
 		return
 	}
 
-	ok, err := services.UploadFiles(1, form.File["files"])
+	ok, err := services.UploadFile(1, form)
 	fmt.Println("upload files result:", ok, err)
 	if err != nil || !ok {
 		fmt.Println("error in uploading files:", err)

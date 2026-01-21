@@ -15,52 +15,48 @@ import (
 	"gorm.io/gorm"
 )
 
-func UploadFiles(userId int, files []*multipart.FileHeader) (bool, error) {
+func UploadFile(userId int, file *multipart.FileHeader) (bool, error) {
 
-	for _, file := range files {
+	base := strings.Split(filepath.Base(file.Filename), ".")[0]
+	ext := filepath.Ext(file.Filename)
+	//fileSaveName := base + time.Now().Format("20060102150405") + ext
+	fileSaveName := fmt.Sprintf("%s_%d%s", base, time.Now().UnixNano(), ext)
+	savePath := filepath.Join("uploads", fileSaveName)
 
-		base := strings.Split(filepath.Base(file.Filename), ".")[0]
-		ext := filepath.Ext(file.Filename)
-		//fileSaveName := base + time.Now().Format("20060102150405") + ext
-		fileSaveName := fmt.Sprintf("%s_%d%s", base, time.Now().UnixNano(), ext)
-		savePath := filepath.Join("uploads", fileSaveName)
-
-		src, err := file.Open()
-		if err != nil {
-			fmt.Println("error opening file:", err)
-			return false, err
-		}
-		defer src.Close()
-
-		out, err := os.Create(savePath)
-		if err != nil {
-			fmt.Println("error creating file:", err)
-			return false, err
-		}
-		defer out.Close()
-
-		_, err = io.Copy(out, src)
-		if err != nil {
-			fmt.Println("error saving file:", err)
-			return false, err
-		}
-
-		var uploadFile models.File
-		uploadFile.Url = fmt.Sprintf("%s/api/files/download/%s", os.Getenv("SERVER_HOST"), fileSaveName)
-		uploadFile.Name = fileSaveName
-		uploadFile.Size = float32(file.Size)
-		uploadFile.UserId = userId
-
-		user_err := db.DB.Create(&uploadFile).Error
-
-		if user_err != nil {
-			fmt.Println("error saving file record to db:", user_err)
-			return false, nil
-		}
-
-		utils.TriggerImageProcessingJob(uploadFile.ID)
-
+	src, err := file.Open()
+	if err != nil {
+		fmt.Println("error opening file:", err)
+		return false, err
 	}
+	defer src.Close()
+
+	out, err := os.Create(savePath)
+	if err != nil {
+		fmt.Println("error creating file:", err)
+		return false, err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, src)
+	if err != nil {
+		fmt.Println("error saving file:", err)
+		return false, err
+	}
+
+	var uploadFile models.File
+	uploadFile.Url = fmt.Sprintf("%s/api/files/download/%s", os.Getenv("SERVER_HOST"), fileSaveName)
+	uploadFile.Name = fileSaveName
+	uploadFile.Size = float32(file.Size)
+	uploadFile.UserId = userId
+
+	user_err := db.DB.Create(&uploadFile).Error
+
+	if user_err != nil {
+		fmt.Println("error saving file record to db:", user_err)
+		return false, nil
+	}
+
+	utils.TriggerImageProcessingJob(uploadFile.ID)
 
 	return true, nil
 

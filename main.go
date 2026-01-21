@@ -22,5 +22,6 @@ func main() {
 
 	// Setup routes
 	router.SetupRoutes(r)
-	r.Run() // Start the server
+	// Run on 0.0.0.0:8000
+	r.Run("0.0.0.0:8000")
 }

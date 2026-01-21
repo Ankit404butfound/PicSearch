@@ -2,4 +2,5 @@
 .env
 env/
 .vscode
+uploads/*
 __pycache__/
