@@ -19,14 +19,14 @@ type User struct {
 }
 
 type File struct {
-	ID         int             `gorm:"primaryKey"`
-	Name       string          `gorm:"type:varchar(255);not null"`
-	Metadata   datatypes.JSON  `gorm:"type:json"`
-	UploadedAt time.Time       `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
-	Embedding  pgvector.Vector `pg:"type:vector(512)"`
-	Url        string          `gorm:"type:varchar(512);not null"`
-	Size       float32         `gorm:"type:float"`
-	UserId     int             `gorm:"foreignKey;not null"`
+	ID         int              `gorm:"primaryKey"`
+	Name       string           `gorm:"type:varchar(255);not null"`
+	Metadata   datatypes.JSON   `gorm:"type:json"`
+	UploadedAt time.Time        `gorm:"type:timestamp;not null;default:CURRENT_TIMESTAMP"`
+	Embedding  *pgvector.Vector `pg:"type:vector(512);default:null"`
+	Url        string           `gorm:"type:varchar(512);not null"`
+	Size       float32          `gorm:"type:float"`
+	UserId     int              `gorm:"foreignKey;not null"`
 
 	// Associations
 	User  User   `gorm:"constraint:OnDelete:CASCADE;"`

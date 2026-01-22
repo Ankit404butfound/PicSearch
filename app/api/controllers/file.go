@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"PicSearch/app/api/schemas"
 	"PicSearch/app/api/services"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 // file routes
@@ -46,10 +48,10 @@ func GetFiles(c *gin.Context) {
 	query := c.Query("q")
 	faceIdsStr := c.QueryArray("face_ids")
 
-	// if query == "" && len(faceIdsStr) == 0 {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Either query or face is required"})
-	// 	return
-	// }
+	if query == "" && len(faceIdsStr) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Either query or face is required"})
+		return
+	}
 	var faceIds []int
 	if len(faceIdsStr) > 0 {
 		faceIds = make([]int, 0, len(faceIdsStr))
@@ -74,7 +76,10 @@ func GetFiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, files)
+	var filesResponse []schemas.FileResponse
+	copier.Copy(&filesResponse, &files)
+
+	c.JSON(http.StatusOK, filesResponse)
 }
 
 func DownloadFile(c *gin.Context) {

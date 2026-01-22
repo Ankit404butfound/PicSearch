@@ -1,6 +1,7 @@
 package services
 
 import (
+	"PicSearch/app/api/schemas"
 	"PicSearch/app/api/utils"
 	"PicSearch/app/db"
 	"PicSearch/app/db/models"
@@ -12,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/pgvector/pgvector-go"
 )
 
 func UploadFile(userId int, file *multipart.FileHeader) (bool, error) {
@@ -48,6 +49,7 @@ func UploadFile(userId int, file *multipart.FileHeader) (bool, error) {
 	uploadFile.Name = fileSaveName
 	uploadFile.Size = float32(file.Size)
 	uploadFile.UserId = userId
+	uploadFile.Embedding = nil
 
 	user_err := db.DB.Create(&uploadFile).Error
 
@@ -62,95 +64,104 @@ func UploadFile(userId int, file *multipart.FileHeader) (bool, error) {
 
 }
 
-func GetFiles(id int, query string, faceIds []int) ([]models.File, error) {
-	var files []models.File
-
-	// Initialize base query with JOIN
-	dbQuery := db.DB.Model(&models.Face{}).
-		Select("files.*").
-		Joins("JOIN files ON faces.file_id = files.id")
-
-	// Add WHERE condition if faceIds is provided
-	if len(faceIds) > 0 {
-		dbQuery = dbQuery.Where("faces.unique_face_id IN ?", faceIds)
-	}
-
-	queryEmbedding, err := utils.GetEmbeddings(query)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add ORDER BY clause if query (embedding) is provided
-	if query != "" {
-		// Assuming you have pgvector extension and the embedding is a vector type
-		// Use raw SQL for the vector distance operator
-		dbQuery = dbQuery.Order(gorm.Expr("files.embedding <=> ?", queryEmbedding))
-	}
-
-	// Add LIMIT and execute
-	err = dbQuery.Limit(10).Find(&files).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
-
-// func GetFiles(id int, querry *string, faced_id *[]int) ([]models.File, error) {
-
+// func GetFiles(id int, query string, faceIds []int) ([]models.File, error) {
 // 	var files []models.File
-// 	var uniqueFace models.UniqueFace
 
-// 	if querry!=nil && faced_id != nil {
+// 	// Check if faceIds is empty (if there's no `id` check or something related)
+// 	// If id is relevant to the query, ensure you're passing it correctly into the function
+// 	// Initialize base query with JOIN
+// 	dbQuery := db.DB.Model(&models.File{})
 
-// 		// Example: simple contains search
-
-// 		db.DB.Find(&files).Order()
-// 		// querryEmbedding := getEmbeddings(querry)
-// 		// err := db.DB.Find(files, querryEmbedding).Error
-
-// 		// if err != nil {
-// 		// 	return nil, err
-// 		// }
-
-// 		// return files, nil
-
-// 		subQuery := db.DB.
-// 		Select("DISTINCT file_id").
-// 		Table("faces").
-// 		Where("unique_face_id IN ?", faced_id)
-
-// 	// Main query: get files with embedding similarity and face filter
-// 		err := db.DB.
-// 			Where("id IN (?)", subQuery).
-// 			Order("embedding <=> ?", querryEmbedding).
-// 			Limit(limit).
-// 			Offset(offset).
-// 			Find(&files).Error
-
-// 	if err != nil {
-// 		return nil, err
+// 	// Add JOIN condition to include faces if faceIds are provided
+// 	if len(faceIds) > 0 {
+// 		// Correcting the join to use the correct relation between `faces` and `files`
+// 		dbQuery = dbQuery.Joins("JOIN faces ON faces.file_id = files.id").Where("faces.unique_face_id IN ?", faceIds)
 // 	}
 
-// 	// Eager load associations if needed
-// 	err = r.DB.Preload("Faces").Preload("Faces.UniqueFace").Find(&files).Error
-
-// 	return files, err
-
-// 	}
-
-// 	if faced_id != nil {
-// 		err := db.DB.Find(uniqueFace, faced_id).Error
-
+// 	// Add ORDER BY clause for vector similarity calculation
+// 	if query != "" {
+// 		// Calculate the query embedding here
+// 		queryEmbedding, err := utils.GetEmbeddings(query)
 // 		if err != nil {
-// 			file_err := db.DB.Find(files, uniqueFace.Embedding).Error
-
-// 			if file_err != nil {
-// 				return files, nil
-// 			}
+// 			return nil, fmt.Errorf("failed to get embeddings: %v", err)
 // 		}
+// 		// Use raw SQL for the vector distance operator with ORDER BY
+// 		dbQuery = dbQuery.Clauses(clause.OrderBy{
+// 			Expression: clause.Expr{
+// 				SQL: "embedding <=> ?", Vars: []interface{}{pgvector.NewVector(queryEmbedding)},
+// 			},
+// 		})
+// 	}
+
+// 	// Execute the query with LIMIT and retrieve the files
+// 	err := dbQuery.Limit(10).Find(&files).Error
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error retrieving files: %v", err)
 // 	}
 
 // 	return files, nil
-
 // }
+
+func GetFiles(userId int, query string, faceIds []int) ([]schemas.FileResponse, error) {
+	var files []schemas.FileResponse
+	var queryEmbedding []float32
+	var err error
+
+	if query != "" && len(faceIds) > 0 {
+		queryEmbedding, err = utils.GetEmbeddings(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get embeddings: %v", err)
+		}
+		err = db.DB.Raw(`
+			SELECT
+				embedding <=> ? AS distance, files.id, name, metadata, url, size, uploaded_at
+			FROM
+				files
+			JOIN
+				faces ON faces.file_id = files.id
+			WHERE
+				faces.unique_face_id IN ?
+			ORDER BY
+				embedding <=> ?
+			LIMIT ? OFFSET ?;
+		`, pgvector.NewVector(queryEmbedding), faceIds, pgvector.NewVector(queryEmbedding), 10, 0).Scan(&files).Error
+
+	} else if query != "" {
+		var err error
+		queryEmbedding, err = utils.GetEmbeddings(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get embeddings: %v", err)
+		}
+		err = db.DB.Raw(`
+			SELECT
+				embedding <=> ? AS distance, id, name, metadata, url, size, uploaded_at
+			FROM
+				files
+			ORDER BY
+				embedding <=> ?
+			LIMIT ?;
+		`, pgvector.NewVector(queryEmbedding), pgvector.NewVector(queryEmbedding), 10).Scan(&files).Error
+
+	} else if len(faceIds) > 0 {
+		err = db.DB.Raw(`
+			SELECT
+				files.id, name, metadata, url, size, uploaded_at
+			FROM
+				files
+			JOIN
+				faces ON faces.file_id = files.id
+			WHERE
+				faces.unique_face_id IN ?
+			LIMIT ? OFFSET ?;
+		`, faceIds, 10, 0).Scan(&files).Error
+
+	} else {
+		return nil, fmt.Errorf("either query or faceIds must be provided")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving files: %v", err)
+	}
+	fmt.Println("files retrieved:", files)
+	return files, nil
+}

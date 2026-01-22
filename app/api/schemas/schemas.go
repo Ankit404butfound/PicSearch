@@ -19,3 +19,12 @@ type UpdateUserRequest struct {
 	Name  string `json:"name"`  // The updated name of the user
 	Email string `json:"email"` // The updated email of the user
 }
+
+type FileResponse struct {
+	ID        int       `json:"id"`                 // The ID of the file
+	Name      string    `json:"name"`               // The name of the file
+	Url       string    `json:"url"`                // The URL of the file
+	Size      float32   `json:"size"`               // The size of the file
+	CreatedAt time.Time `json:"created_at"`         // The creation timestamp of the file
+	Distance  float32   `json:"distance,omitempty"` // The distance metric for similarity search
+}

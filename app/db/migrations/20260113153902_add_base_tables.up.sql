@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TYPE job_status AS ENUM ('pending', 'in_progress', 'completed', 'failed');
 
 create table users
@@ -20,7 +21,7 @@ create table files
     name        varchar(255)                        not null,
     description text,
     uploaded_at timestamp default CURRENT_TIMESTAMP not null,
-    embedding   text,
+    embedding   vector(512) default null,
     url         varchar(512)                        not null,
     size        numeric,
     user_id     bigint                              not null
